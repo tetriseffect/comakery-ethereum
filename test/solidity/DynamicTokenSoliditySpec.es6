@@ -780,6 +780,23 @@ contract('DynamicToken', (accounts) => {
   })
 
   describe('#setMaxSupply', () => {
+    contractIt('emits an event', (done) => {
+      let events = token.MaxSupply()
+      let newMaxSupply = 987654321
+
+      Promise.resolve().then(() => {
+        return token.setMaxSupply(newMaxSupply, {from: accounts[0]})
+      }).then(() => {
+        return firstEvent(events)
+      }).then((event) => {
+        expect(event.args._by).to.equal(accounts[0])
+        expect(event.args._newMaxSupply.toNumber()).to.equal(newMaxSupply)
+        expect(event.args._isMaxSupplyLocked).to.equal(false)
+        done()
+        return
+      })
+    })
+
     contractShouldThrowForNonOwner(() => {
       return token.setMaxSupply(10000, {from: accounts[1]})
     })
@@ -813,6 +830,22 @@ contract('DynamicToken', (accounts) => {
   })
 
   describe('#lockMaxSupply', () => {
+    contractIt('emits an event', (done) => {
+      let events = token.MaxSupply()
+
+      Promise.resolve().then(() => {
+        return token.lockMaxSupply({from: accounts[0]})
+      }).then(() => {
+        return firstEvent(events)
+      }).then((event) => {
+        expect(event.args._by).to.equal(accounts[0])
+        expect(event.args._newMaxSupply.toNumber()).to.equal(1e7)
+        expect(event.args._isMaxSupplyLocked).to.equal(true)
+        done()
+        return
+      })
+    })
+
     contractShouldThrowForNonOwner(() => {
       return token.lockMaxSupply({from: accounts[1]})
     })
@@ -850,6 +883,58 @@ contract('DynamicToken', (accounts) => {
         expect(newMaxSupply.toNumber()).to.equal(startingMaxSupply)
         return
       }).then(done).catch(done)
+    })
+  })
+
+  describe('#lockContractOwner', () => {
+    contractIt('emits an event', (done) => {
+      let events = token.LockContractOwner()
+
+      Promise.resolve().then(() => {
+        return token.lockContractOwner({from: accounts[0]})
+      }).then(() => {
+        return firstEvent(events)
+      }).then((event) => {
+        expect(event.args._by).to.equal(accounts[0])
+        done()
+        return
+      })
+    })
+
+    contractShouldThrowForNonOwner(() => {
+      return token.lockContractOwner({from: accounts[1]})
+    })
+
+    contractShouldThrowIfClosed(() => {
+      return token.lockContractOwner({from: accounts[0]})
+    })
+
+    contractShouldThrowIfEtherSent(() => {
+      return token.lockContractOwner({from: accounts[0], value: 1})
+    })
+
+    contractIt('should begin unlocked', (done) => {
+      token.isContractOwnerLocked.call().then((locked) => {
+        expect(locked).to.equal(false)
+        return
+      }).then(done).catch(done)
+    })
+
+    contractIt('should allow owner to set isContractOwnerLocked', (done) => {
+      Promise.resolve().then(() => {
+        return token.lockContractOwner({from: accounts[0]})
+      }).then(() => {
+        return token.isContractOwnerLocked.call()
+      }).then((locked) => {
+        expect(locked).to.equal(true)
+        return
+      }).then(done).catch(done)
+    })
+
+    contractShouldThrow('when owner tries to transferContractOwnership if isContractOwnerLocked', () => {
+      return token.lockContractOwner({from: accounts[0]}).then(() => {
+        return token.transferContractOwnership(accounts[1], {from: accounts[0]})
+      })
     })
   })
 
@@ -891,7 +976,7 @@ contract('DynamicToken', (accounts) => {
         token.lockOpen({from: accounts[0]})
       })
 
-      contractIt('should have lockedOPen set to true', (done) => {
+      contractIt('should have lockedOpen set to true', (done) => {
         token.isLockedOpen.call().then((locked) => {
           expect(locked).to.equal(true)
           return
@@ -913,6 +998,21 @@ contract('DynamicToken', (accounts) => {
   })
 
   describe('#transferContractOwnership', () => {
+    contractIt('emits an event', (done) => {
+      let events = token.TransferContractOwnership()
+
+      Promise.resolve().then(() => {
+        return token.transferContractOwnership(accounts[1], {from: accounts[0]})
+      }).then(() => {
+        return firstEvent(events)
+      }).then((event) => {
+        expect(event.args._by).to.equal(accounts[0])
+        expect(event.args._to).to.equal(accounts[1])
+        done()
+        return
+      })
+    })
+
     contractShouldThrowIfEtherSent(() => {
       return token.transferContractOwnership(accounts[1], {value: 1})
     })
