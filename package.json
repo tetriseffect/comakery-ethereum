@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "start": "nodemon --ignore . bin/server",
-    "dev:server": "DEBUG=config,dev,server,token nodemon --watch lib --watch environments bin/server",
+    "dev:server": "DEBUG=config,dev,server,token nodemon --watch lib --watch truffle.js bin/server",
     "dev": "DEBUG=config,dev,server,token bin/dev",
     "truffle": "truffle",
     "testrpc": "testrpc -p 7777 --account='0x0000000000000000000000000000000000000000000000000000000000000001,10000000000000000000000' --account='0x0000000000000000000000000000000000000000000000000000000000000002,10000000000000000000000' --account='0x0000000000000000000000000000000000000000000000000000000000000003,10000000000000000000000' --account='0x0000000000000000000000000000000000000000000000000000000000000004,10000000000000000000000'",

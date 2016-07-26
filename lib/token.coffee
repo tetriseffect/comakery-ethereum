@@ -9,8 +9,7 @@ debug = require('debug')('token')
 Web3 = require 'web3'
 Pudding = require "ether-pudding"
 
-envDir = path.resolve __dirname, "../environments/#{nodeEnv}"
-config = require('../truffle').networks[envDir]
+config = require('../truffle').networks[nodeEnv]
 
 d = (args...) -> debug pjson args...
 
@@ -25,7 +24,7 @@ class Token
   @deployContract: ->
     quiet = nodeEnv is 'test'
     {output} = run "node_modules/.bin/truffle migrate --network #{nodeEnv} --reset --verbose-rpc", {quiet}
-    pattern = ///#{CONTRACT_NAME}: (0x[0-9a-f]{40})///
+    pattern = ///#{CONTRACT_NAME}:\s(0x[0-9a-f]{40})///
     contractAddress = pattern.exec(output)?[1]
     unless contractAddress
       throw Promise.OperationalError "No contract address found in
@@ -34,13 +33,18 @@ class Token
     contractAddress
 
   @loadContract: (contractAddress) ->
-    TokenContract = require path.join(envDir, "contracts/#{CONTRACT_NAME}.sol.js")
+    TokenContract = require path.resolve "#{__dirname}/../build/contracts/#{CONTRACT_NAME}.sol.js"
     web3 = new Web3
     rpcUrl = "http://#{config.host}:#{config.port}"
     d { rpcUrl }
-    web3.setProvider new Web3.providers.HttpProvider rpcUrl
-    Pudding.setWeb3 web3
-    TokenContract.load Pudding
+    # web3.setProvider new Web3.providers.HttpProvider rpcUrl
+    # Pudding.setWeb3 web3
+    # TokenContract.load Pudding
+
+    provider = new Web3.providers.HttpProvider rpcUrl
+    TokenContract.setProvider(provider)
+    #
+    # var MyContract = require("./MyContract.sol.js");
     TokenContract.at contractAddress
 
   @create: (newMaxSupply) ->
